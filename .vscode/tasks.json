@@ -1,0 +1,128 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Start Node.js STOMP server",
+			"command": "node server.js",
+			"args": [],
+			"group": "build",
+			"isBackground": true
+		},
+		{
+			"type": "shell",
+			"label": "Start Node.js STOMP server (Watch)",
+			"command": "nodemon server.js",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": {
+				"owner": "custom",
+				"pattern": [
+					{
+						"regexp": ".*Server is running.*"
+					}
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".*Starting.*",
+					"endsPattern": "✅ Server is running"
+				}
+			}
+		},
+		{
+			"type": "shell",
+			"label": "Start Angular app",
+			"command": "npm start",
+			"options": {
+				"cwd": "${workspaceFolder}/ws-app"
+			},
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"type": "shell",
+			"label": "Dev Environment (Backend + Frontend)",
+			"dependsOn": [
+				"Start Node.js STOMP server (Watch)",
+				"Start Angular app"
+			],
+			"dependsOrder": "parallel",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Debug Angular unit test file (Karma)",
+			"command": "npx ng test --include=\"${input:specFile}\" --watch --browsers=ChromeDebugStable",
+			"options": {
+				"cwd": "${workspaceFolder}/ws-app"
+			},
+			"isBackground": true,
+			"problemMatcher": {
+				"owner": "custom",
+				"pattern": [
+					{
+						"regexp": ".*"
+					}
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "Application bundle generation complete|Watch mode enabled|Karma v",
+					"endsPattern": "Connected on socket .* with id .*"
+				}
+			},
+			"group": "test"
+		},
+		{
+			"type": "shell",
+			"label": "Validate current file is spec",
+			"command": "if [[ \"${fileBasename}\" != *.spec.ts ]]; then echo 'Active file must be a .spec.ts file'; exit 1; fi"
+		},
+		{
+			"type": "shell",
+			"label": "Debug current spec file (Karma)",
+			"command": "cd ws-app && npx ng test --include=\"src/app/**/${fileBasename}\" --watch --browsers=ChromeDebugStable",
+			"dependsOn": [
+				"Validate current file is spec"
+			],
+			"dependsOrder": "sequence",
+			"isBackground": true,
+			"problemMatcher": {
+				"owner": "custom",
+				"pattern": [
+					{
+						"regexp": ".*"
+					}
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "Application bundle generation complete|Watch mode enabled|Karma v",
+					"endsPattern": "Connected on socket .* with id .*"
+				}
+			},
+			"group": "test"
+		},
+		{
+			"type": "shell",
+			"label": "Run current spec file (Headless)",
+			"command": "cd ws-app && npm run test:one -- --include=\"src/app/**/${fileBasename}\"",
+			"dependsOn": [
+				"Validate current file is spec"
+			],
+			"dependsOrder": "sequence",
+			"group": "test"
+		}
+	],
+	"inputs": [
+		{
+			"id": "specFile",
+			"type": "promptString",
+			"description": "Spec file path relative to ws-app (example: src/app/app.component.spec.ts)",
+			"default": "src/app/app.component.spec.ts"
+		}
+	]
+}

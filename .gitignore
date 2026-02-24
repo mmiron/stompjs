@@ -1,0 +1,39 @@
+# Environment overrides
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+out/
+
+# IDE
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Angular
+.angular/
+ws-app/dist/
+ws-app/.angular/
+
+# Coverage
+coverage/
+.nyc_output/

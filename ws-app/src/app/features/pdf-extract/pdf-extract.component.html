@@ -1,0 +1,21 @@
+<div class="pdf-extract-container">
+  <div class="header">
+    <h2>Passport Information Extractor</h2>
+    <button class="back-button" (click)="goHome()">← Back to Home</button>
+  </div>
+  <div class="upload-section">
+    <label>Upload PDF or use default Canadian Passport Form:</label>
+    <input type="file" accept="application/pdf" (change)="onFileSelected($event)" />
+  </div>
+  <div *ngIf="isLoading" class="loading">Extracting information...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+  
+  <ng-container *ngFor="let regionArray of regions; let i = index">
+    <div *ngIf="regionArray.length > 0" class="regions-section">
+      <h3>{{ formSections[i].keyword }}</h3>
+      <div class="form-preview">
+        <img *ngFor="let region of regionArray" [src]="region.image" [alt]="'Extracted ' + formSections[i].keyword" />
+      </div>
+    </div>
+  </ng-container>
+</div>

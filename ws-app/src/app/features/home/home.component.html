@@ -1,0 +1,36 @@
+<div class="home-container">
+  <div class="hero-section">
+    <h1>{{ 'welcomeDemoApp' | translate }}</h1>
+    <p class="subtitle">Explore powerful PDF and data extraction tools</p>
+  </div>
+
+  <div class="cards-grid">
+    <div class="nav-card" routerLink="/table">
+      <div class="card-icon">📊</div>
+      <h2>{{ 'goToDataRecords' | translate }}</h2>
+      <p class="card-description">View and manage data records in an interactive table with filtering and sorting capabilities</p>
+      <div class="card-arrow">→</div>
+    </div>
+
+    <div class="nav-card" routerLink="/pdf-extract">
+      <div class="card-icon">📄</div>
+      <h2>Extract PDF Images</h2>
+      <p class="card-description">Extract specific sections from PDF forms and save them as images. Perfect for passport applications</p>
+      <div class="card-arrow">→</div>
+    </div>
+
+    <div class="nav-card" routerLink="/qr-extract">
+      <div class="card-icon">📱</div>
+      <h2>Extract QR Codes</h2>
+      <p class="card-description">Scan and extract QR codes from PDF documents for quick data access</p>
+      <div class="card-arrow">→</div>
+    </div>
+
+    <div class="nav-card" routerLink="/performance-dashboard">
+      <div class="card-icon">📈</div>
+      <h2>Performance Dashboard</h2>
+      <p class="card-description">Monitor WebSocket health, load test results, and real-time system performance</p>
+      <div class="card-arrow">→</div>
+    </div>
+  </div>
+</div>

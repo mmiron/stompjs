@@ -1,0 +1,209 @@
+<div class="dashboard-container">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>📊 Performance Dashboard</h1>
+      <p>Real-time monitoring of WebSocket connection health and message processing performance</p>
+    </div>
+    <div class="header-actions">
+      <a class="action-btn" routerLink="/">🏠 Home</a>
+      <button class="action-btn" (click)="exportMetrics()">📥 Export Metrics</button>
+      <button class="action-btn danger" *ngIf="testHistory().length > 0" (click)="clearHistory()">🗑️ Clear History</button>
+    </div>
+  </div>
+
+  <!-- Connection Status Bar -->
+  <div class="connection-bar">
+    <div class="quick-stats">
+      <div class="stat">
+        <span class="stat-label">Messages</span>
+        <span class="stat-value">{{ messageCount() }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Errors</span>
+        <span class="stat-value" [class.error]="errorCount() > 0">{{ errorCount() }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Last Update</span>
+        <span class="stat-value">{{ lastUpdateTime() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="dashboard-grid">
+    <!-- Current Metrics Section -->
+    <section class="metrics-section">
+      <h2>📈 Current Performance Metrics</h2>
+      <div class="metrics-cards">
+        <div 
+          *ngFor="let metric of currentMetrics()" 
+          class="metric-card"
+          [style.border-left-color]="getMetricColor(metric.status)">
+          <div class="metric-icon">{{ metric.icon }}</div>
+          <div class="metric-content">
+            <span class="metric-label">{{ metric.label }}</span>
+            <span class="metric-value">{{ metric.value }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Health Checks Section -->
+    <section class="health-section">
+      <h2>🏥 System Health Checks</h2>
+      <div class="health-checks">
+        <div 
+          *ngFor="let check of healthChecks()" 
+          class="health-item"
+          [class.pass]="check.status === 'pass'"
+          [class.warn]="check.status === 'warn'"
+          [class.fail]="check.status === 'fail'">
+          <div class="health-name">{{ check.name }}</div>
+          <div class="health-message">{{ check.message }}</div>
+          <div *ngIf="check.metric !== undefined" class="health-metric">
+            {{ check.metric.toFixed(1) }}
+            <span *ngIf="check.threshold" class="threshold">
+              (warn: {{ check.threshold.warn }}, crit: {{ check.threshold.critical }})
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recommendations Section -->
+    <section class="recommendations-section">
+      <h2>💡 AI Recommendations</h2>
+      <div class="recommendations-list">
+        <div *ngFor="let rec of getRecommendations()" class="recommendation-item">
+          <p>{{ rec }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Load Test Section -->
+  <section class="load-test-section">
+    <h2>🔬 Load Testing</h2>
+    <app-load-test-runner (metricsCompleted)="onLoadTestCompleted($event)"></app-load-test-runner>
+  </section>
+
+  <!-- Test Results Section -->
+  <div *ngIf="lastTestMetrics()" class="results-section">
+    <h2>📋 Last Test Results</h2>
+    <div class="results-grid">
+      <div class="result-item">
+        <span class="result-label">Total Messages</span>
+        <span class="result-value">{{ lastTestMetrics()!.totalMessages }}</span>
+      </div>
+      <div class="result-item success">
+        <span class="result-label">Successful</span>
+        <span class="result-value">{{ lastTestMetrics()!.successfulMessages }}</span>
+      </div>
+      <div class="result-item" [class.error]="lastTestMetrics()!.failedMessages > 0">
+        <span class="result-label">Failed</span>
+        <span class="result-value">{{ lastTestMetrics()!.failedMessages }}</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Throughput</span>
+        <span class="result-value">{{ lastTestMetrics()!.messagesPerSecond }} msg/s</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Avg Latency</span>
+        <span class="result-value">{{ lastTestMetrics()!.averageLatencyMs }}ms</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Min/Max Latency</span>
+        <span class="result-value">{{ lastTestMetrics()!.minLatencyMs }}ms / {{ lastTestMetrics()!.maxLatencyMs }}ms</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Memory Used</span>
+        <span class="result-value">{{ lastTestMetrics()!.memoryUsedMB }}MB</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">CPU Usage</span>
+        <span class="result-value">{{ lastTestMetrics()!.cpuPercentage }}%</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Duration</span>
+        <span class="result-value">{{ (lastTestMetrics()!.duration / 1000).toFixed(2) }}s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historical Data Section -->
+  <div *ngIf="testHistory().length > 0" class="history-section">
+    <h2>📚 Test History</h2>
+    <div class="history-controls">
+      <button 
+        *ngFor="let range of timeRanges"
+        (click)="setTimeRange(range)"
+        [class.active]="selectedTimeRange() === range"
+        class="time-range-btn">
+        {{ range }}
+      </button>
+      <button 
+        (click)="showRawData.set(!showRawData())"
+        class="toggle-btn">
+        {{ showRawData() ? '📊 Charts' : '📄 Raw Data' }}
+      </button>
+    </div>
+    
+    <div *ngIf="!showRawData()" class="history-summary">
+      <div class="summary-stat">
+        <span class="summary-label">Tests Run</span>
+        <span class="summary-value">{{ historySummary().count }}</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-label">Avg Throughput</span>
+        <span class="summary-value">
+          {{ historySummary().avgThroughput.toFixed(0) }} msg/s
+        </span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-label">Avg Latency</span>
+        <span class="summary-value">
+          {{ historySummary().avgLatency.toFixed(2) }}ms
+        </span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-label">Best Success Rate</span>
+        <span class="summary-value">
+          {{ historySummary().bestSuccessRate.toFixed(1) }}%
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="showRawData()" class="raw-data">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Throughput</th>
+            <th>Success Rate</th>
+            <th>Avg Latency</th>
+            <th>Memory</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let test of filteredTestHistory(); let i = index">
+            <td>#{{ filteredTestHistory().length - i }}</td>
+            <td>{{ test.messagesPerSecond }} msg/s</td>
+            <td>{{ (((test.totalMessages - test.failedMessages) / test.totalMessages) * 100).toFixed(1) }}%</td>
+            <td>{{ test.averageLatencyMs }}ms</td>
+            <td>{{ test.memoryUsedMB }}MB</td>
+            <td>{{ (test.duration / 1000).toFixed(2) }}s</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer Info -->
+  <div class="dashboard-footer">
+    <p>💰 All metrics are collected in real-time and stored locally</p>
+    <p>📱 Use the Load Test Runner above to generate new performance data</p>
+    <p>🔄 Health checks update automatically every 5 seconds</p>
+  </div>
+</div>

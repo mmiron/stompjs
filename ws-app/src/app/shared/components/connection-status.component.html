@@ -1,0 +1,10 @@
+<div class="connection-status" [ngClass]="getStatusClass()" [title]="getTooltip()">
+  <div class="status-indicator" [ngClass]="getIndicatorClass()">
+    <span class="pulse"></span>
+    <span class="dot"></span>
+  </div>
+  <span class="status-text">{{ getStatusText() }}</span>
+  <span *ngIf="circuitBreakerState() !== 'closed'" class="circuit-breaker-badge">
+    {{ circuitBreakerState() | uppercase }}
+  </span>
+</div>

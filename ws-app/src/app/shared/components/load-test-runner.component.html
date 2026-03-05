@@ -1,0 +1,87 @@
+<div class="load-test-container">
+  <div class="load-test-header">
+    <h3>Load Test Runner</h3>
+    <p class="subtitle">Test STOMP message handling under various load conditions</p>
+  </div>
+
+  <div class="test-scenarios">
+    <button
+      *ngFor="let scenario of scenarios"
+      [disabled]="isRunning()"
+      (click)="runTest(scenario)"
+      class="scenario-btn">
+      {{ scenario.name }}
+    </button>
+  </div>
+
+  <div *ngIf="currentTest()" class="current-test">
+    <h4>Running: {{ currentTest()?.name }}</h4>
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="progressPercent()"></div>
+    </div>
+    <p class="progress-text">
+      {{ currentMetrics()?.successfulMessages || 0 }} messages sent
+      ({{ currentMetrics()?.messagesPerSecond || 0 }} msg/sec)
+    </p>
+  </div>
+
+  <div *ngIf="lastMetrics()" class="metrics-display">
+    <h4>Last Test Results</h4>
+    <div class="metrics-grid">
+      <div class="metric">
+        <span class="label">Total Messages:</span>
+        <span class="value">{{ lastMetrics()!.totalMessages }}</span>
+      </div>
+      <div class="metric">
+        <span class="label">Successful:</span>
+        <span class="value" [class.success]="lastMetrics()!.failedMessages === 0">
+          {{ lastMetrics()!.successfulMessages }}
+        </span>
+      </div>
+      <div class="metric">
+        <span class="label">Failed:</span>
+        <span class="value" [class.error]="lastMetrics()!.failedMessages > 0">
+          {{ lastMetrics()!.failedMessages }}
+        </span>
+      </div>
+      <div class="metric">
+        <span class="label">Throughput:</span>
+        <span class="value">{{ lastMetrics()!.messagesPerSecond }} msg/sec</span>
+      </div>
+      <div class="metric">
+        <span class="label">Avg Latency:</span>
+        <span class="value">{{ lastMetrics()!.averageLatencyMs }}ms</span>
+      </div>
+      <div class="metric">
+        <span class="label">Min/Max Latency:</span>
+        <span class="value">{{ lastMetrics()!.minLatencyMs }}ms / {{ lastMetrics()!.maxLatencyMs }}ms</span>
+      </div>
+      <div class="metric">
+        <span class="label">Memory Delta:</span>
+        <span class="value" [class.warning]="lastMetrics()!.memoryUsedMB > 10">
+          {{ lastMetrics()!.memoryUsedMB }}MB
+        </span>
+      </div>
+      <div class="metric">
+        <span class="label">Est. CPU:</span>
+        <span class="value" [class.warning]="lastMetrics()!.cpuPercentage > 70">
+          {{ lastMetrics()!.cpuPercentage }}%
+        </span>
+      </div>
+      <div class="metric">
+        <span class="label">Duration:</span>
+        <span class="value">{{ (lastMetrics()!.duration / 1000).toFixed(2) }}s</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <h4>Load Test Patterns</h4>
+    <ul>
+      <li><strong>Constant:</strong> Steady message rate throughout test</li>
+      <li><strong>Burst:</strong> Periodic large surges of messages</li>
+      <li><strong>Spike:</strong> Gradual increase then sudden decrease</li>
+      <li><strong>Ramp:</strong> Gradually increasing load over time</li>
+    </ul>
+  </div>
+</div>

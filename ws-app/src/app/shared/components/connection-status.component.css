@@ -1,0 +1,124 @@
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+  color: rgb(22, 163, 74);
+}
+
+.connection-status.reconnecting {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(234, 179, 8, 0.05));
+  color: rgb(161, 98, 7);
+  animation: pulse-container 1s infinite;
+}
+
+.connection-status.disconnected {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(107, 114, 128, 0.05));
+  color: rgb(55, 65, 81);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 12px;
+  height: 12px;
+}
+
+.status-indicator.connected .dot {
+  background-color: rgb(34, 197, 94);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.status-indicator.connected .pulse {
+  display: none;
+}
+
+.status-indicator.reconnecting .dot {
+  background-color: rgb(234, 179, 8);
+  animation: spin 2s linear infinite;
+}
+
+.status-indicator.reconnecting .pulse {
+  background-color: rgb(234, 179, 8);
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+.status-indicator.disconnected .dot {
+  background-color: rgb(107, 114, 128);
+}
+
+.status-indicator.disconnected .pulse {
+  display: none;
+}
+
+.dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.pulse {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+}
+
+.status-text {
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes pulse-container {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.circuit-breaker-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.2);
+  color: rgb(220, 38, 38);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+  border: 1px solid rgb(239, 68, 68);
+}

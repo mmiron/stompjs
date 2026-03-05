@@ -1,0 +1,15 @@
+<div class="filter-panel">
+  <form [formGroup]="filterForm" class="filter-form" (ngSubmit)="$event.preventDefault()">
+    <div class="filter-fields">
+      <input formControlName="id" placeholder="{{ 'id' | translate }}" />
+      <input formControlName="name" placeholder="{{ 'name' | translate }}" />
+      <input formControlName="description" placeholder="{{ 'description' | translate }}" />
+      <input formControlName="createdAt" placeholder="{{ 'created' | translate }}" />
+      <input formControlName="updatedAt" placeholder="{{ 'updated' | translate }}" />
+      <input formControlName="tags" placeholder="{{ 'tags' | translate }}" />
+    </div>
+    <div class="filter-actions">
+      <button type="button" (click)="clearFilters()" class="action-btn clear-filters-btn">Clear</button>
+    </div>
+  </form>
+</div>

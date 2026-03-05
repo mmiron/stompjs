@@ -1,0 +1,28 @@
+<div class="qr-extract-container">
+  <div class="header">
+    <h2>QR Code Extractor</h2>
+    <button class="back-button" (click)="goHome()">← Back to Home</button>
+  </div>
+  
+  <div class="upload-section">
+    <label>Upload PDF or use default QR Code PDF:</label>
+    <input type="file" accept="application/pdf" (change)="onFileSelected($event)" />
+  </div>
+  
+  <div *ngIf="isLoading" class="loading">Extracting QR codes...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+  
+  <div *ngIf="qrCodes.length > 0" class="qr-codes-section">
+    <h3>Extracted QR Codes ({{ qrCodes.length }} found)</h3>
+    <div class="qr-grid">
+      <div *ngFor="let qr of qrCodes" class="qr-item">
+        <div class="qr-label">Page {{ qr.page }}, QR #{{ qr.index }}</div>
+        <img [src]="qr.image" [alt]="'QR Code from page ' + qr.page" />
+      </div>
+    </div>
+  </div>
+  
+  <div *ngIf="!isLoading && !error && qrCodes.length === 0 && pdfFile" class="no-results">
+    No QR codes found in the PDF.
+  </div>
+</div>

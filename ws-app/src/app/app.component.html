@@ -1,0 +1,15 @@
+<div class="app-shell">
+	<header class="app-shell-header">
+		<div class="status-slot">
+			<app-connection-status></app-connection-status>
+		</div>
+	</header>
+
+	<main class="app-shell-main">
+		<router-outlet></router-outlet>
+	</main>
+
+	<section *ngIf="showGlobalLoadTest()" class="dev-load-test">
+		<app-load-test-runner (metricsCompleted)="onGlobalLoadTestCompleted($event)"></app-load-test-runner>
+	</section>
+</div>

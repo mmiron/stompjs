@@ -1,0 +1,17 @@
+{
+  "home": "Home",
+  "dataRecords": "Data Records",
+  "expandAll": "Expand All",
+  "collapseAll": "Collapse All",
+  "id": "ID",
+  "name": "Name",
+  "description": "Description",
+  "created": "Created",
+  "updated": "Updated",
+  "tags": "Tags",
+  "loadingMoreItems": "Loading more items...",
+  "welcomeDemoApp": "Welcome to the Demo App",
+  "goToDataRecords": "Go to Data Records",
+  "showFilter": "Show Filter",
+  "hideFilter": "Hide Filter"
+}

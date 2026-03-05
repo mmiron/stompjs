@@ -1,0 +1,60 @@
+<div class="table-container">
+  <div class="header">
+    <h2 class="table-title">{{ 'dataRecords' | translate }}</h2>
+    <button class="back-button" (click)="goHome()">← Back to Home</button>
+  </div>
+  <div class="table-header">
+    <div class="table-actions">
+      <button (click)="toggleFilterPanel()" class="action-btn filter-btn">
+        <span class="filter-icon">&#128269;</span>
+        {{ showFilterPanel() ? ('hideFilter' | translate) : ('showFilter' | translate) }}
+      </button>
+      <button (click)="expandAll()" class="action-btn expand-all-btn">{{ 'expandAll' | translate }}</button>
+      <button (click)="collapseAll()" class="action-btn collapse-all-btn">{{ 'collapseAll' | translate }}</button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="showFilterPanel() && filterComponent">
+    <ng-container *ngComponentOutlet="filterComponent; injector: filterInjector"></ng-container>
+  </ng-container>
+  <div class="table-wrapper" #tableWrapper (scroll)="onTableScroll($event)">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="expand-col"></th>
+          <th>{{ 'id' | translate }}</th>
+          <th>{{ 'name' | translate }}</th>
+          <th>{{ 'description' | translate }}</th>
+          <th>{{ 'created' | translate }}</th>
+          <th>{{ 'updated' | translate }}</th>
+          <th>{{ 'tags' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of filteredData; track item) {
+        <tr [class.expanded]="item.isExpanded()" class="data-row">
+          <td class="expand-col">
+            <button (click)="toggleRow(item)" class="expand-btn">
+              <span class="expand-arrow" [class.expanded]="item.isExpanded()">▶</span>
+            </button>
+          </td>
+          <td>{{ item.id }}</td>
+          <td class="name-cell">{{ item.name }}</td>
+          <td class="desc-cell">{{ item.description }}</td>
+          <td class="date-cell">{{ item.createdAt }}</td>
+          <td class="date-cell">{{ item.updatedAt }}</td>
+          <td class="tags-cell">{{ getTagsDisplay(item) }}</td>
+        </tr>
+        @if (item.isExpanded()) {
+        <tr class="details-row">
+          <app-row-details [item]="item" (saveChanges)="saveChanges($event)"></app-row-details>
+        </tr>
+        }
+        }
+      </tbody>
+    </table>
+    @if (isLoading()) {
+    <div class="loading-indicator">{{ 'loadingMoreItems' | translate }}</div>
+    }
+  </div>
+</div>

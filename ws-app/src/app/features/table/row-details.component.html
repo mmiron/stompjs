@@ -1,0 +1,29 @@
+<td colspan="6">
+  <div class="details-content">
+    <div class="details-grid">
+      <div class="detail-item">
+        <span class="detail-label">Name:</span>
+        <input type="text" [formControl]="item().nameControl" class="form-input" />
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Description:</span>
+        <textarea [formControl]="item().descriptionControl" class="form-textarea"></textarea>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Created At:</span>
+        <span class="detail-value">{{ item().createdAt }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Tags:</span>
+        <div class="tags-list">
+          @for (tag of item().tags; track tag) {
+            <span class="tag-badge" [class.checked]="tag.isChecked">
+              {{ tag.isChecked ? '✓ ' : '' }}{{ tag.name }}
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+    <button (click)="onSaveChanges()" [disabled]="!item().isChanged()" class="save-btn">Save Changes</button>
+  </div>
+</td>

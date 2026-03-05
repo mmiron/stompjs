@@ -96,7 +96,7 @@ export class TableComponent implements OnInit, OnDestroy {
 
   private subscribeToSocketEvents(): void {
     this.stompService.connectToEvents([
-      { event: 'dataUpdate', topicParam: 42 },
+      { event: 'dataUpdate', topicParam: 0 },
       { event: 'recordChanged', topicParam: 0 },
     ]);
 

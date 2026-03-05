@@ -1062,7 +1062,7 @@ export class StompService implements OnDestroy {
   }
 
   private withTopicParam(destination: string, topicParam?: number): string {
-    if (topicParam === undefined || topicParam === null) {
+    if (topicParam === undefined || topicParam === null || topicParam === 0) {
       return destination;
     }
 

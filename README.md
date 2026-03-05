@@ -4,6 +4,12 @@ This project contains:
 - An Angular app (`ws-app`) using STOMP over WebSocket to communicate with a Node.js backend.
 - A Node.js server (`server.js`) that acts as a STOMP broker over WebSocket.
 
+## Repository Layout
+
+- This is a single repository (monorepo) on branch `main`.
+- `ws-app` is tracked as a normal folder in this repo (not a git submodule).
+- Commit and push from the repository root to include both backend and frontend changes together.
+
 ## Quick Start
 
 ### One-Click Development (VS Code)

@@ -108,8 +108,5 @@ npm run test:ci
 - Use [Stomp socket service guide.md](docs/Stomp%20socket%20service%20guide.md) for implementation patterns, failure modes, and hardening guidance.
 - Use [Stomp socket service zero to prod.md](docs/Stomp%20socket%20service%20zero%20to%20prod.md) for a beginner-friendly, codebase-independent path from fundamentals to production readiness.
 
-## Business Planning Docs
-- Use [CH-Document-Map.md](docs/CH-Document-Map.md) as the index for the full business planning and lender/investor document pack.
-
 ---
 For Copilot customization, see `.github/copilot-instructions.md`.

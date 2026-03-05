@@ -1,6 +1,0 @@
-experiment_id,hypothesis,channel,target_segment,offer,success_metric,target_value,owner,start_date,end_date,status,notes
-GTM-001,Referral incentive will lower CAC by 20%,Referral,Ottawa SMB,Founding member credit,CAC,<=base-20%,GTM Lead,,,,
-GTM-002,Vertical messaging for trades improves conversion,Outbound,Trades,Admin savings assessment,Lead-to-close,>=15%,Founder,,,,
-GTM-003,Partner co-webinar generates qualified leads,Partnership,Clinics,Ops maturity workshop,Qualified leads,>=20 leads/event,GTM Lead,,,,
-GTM-004,Annual-plan default increases cash predictability,Sales process,All SMB plans,Annual-first quote,Annual plan mix,>=45%,Founder,,,,
-GTM-005,Case-study landing page improves demo bookings,Inbound,All SMB,Outcome proof page,Demo conversion,>=4.5%,GTM Lead,,,,

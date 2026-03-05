@@ -1,9 +1,0 @@
-risk_id,risk_category,risk_description,likelihood,impact,owner,mitigation,trigger_signal,status
-R1,Retention,Churn rises above plan due to value mismatch,Medium,High,CS Lead,Improve onboarding and QBR cadence; tighten ICP,Monthly churn >4%,Open
-R2,Unit Economics,CAC payback deteriorates due to inefficient channels,Medium,High,GTM Lead,Reallocate spend to proven channels; referral program,CAC payback >6 months,Open
-R3,Service Quality,Partner SLA misses degrade customer trust,Medium,High,Ops Lead,Partner scorecards and backup providers,SLA breach trend rising 3 weeks,Open
-R4,Regulatory,Regulated advice delivered without licensed oversight,Low,High,Compliance Lead,Strict workflow gating and approval controls,Policy exception event,Open
-R5,Data Security,Unauthorized access to member data,Low,High,Security Owner,MFA/SSO least privilege and audit logs,Security incident alert,Open
-R6,Cash Flow,Cash runway drops below safety threshold,Medium,High,Finance Lead,Hiring gates and opex controls; contingency plan,Runway <6 months,Open
-R7,Concentration,Overdependence on a single partner firm,Medium,Medium,Partner Manager,Maintain 2+ partners per category,Single partner >60% load,Open
-R8,Execution,Too many services launched before repeatability,High,Medium,Founder,Stage-gate service expansion process,Scope creep requests accumulate,Open

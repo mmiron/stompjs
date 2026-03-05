@@ -1,0 +1,9 @@
+candidate,commitment_score_10,role_criticality_score_10,execution_score_10,risk_capital_score_10,weighted_score,founder_pool_percent,notes
+Founder_You,,,,,,,
+Cofounder_Ops,,,,,,,
+Cofounder_Product,,,,,,,
+
+# Weights
+# commitment=0.35, role_criticality=0.30, execution=0.20, risk_capital=0.15
+# weighted_score = (commitment*0.35)+(role*0.30)+(execution*0.20)+(risk*0.15)
+# founder_pool_percent = weighted_score / sum(all_weighted_scores)

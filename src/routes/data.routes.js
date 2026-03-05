@@ -3,10 +3,11 @@ const dataService = require('../services/data.service');
 
 const router = express.Router();
 
-// Get all data
+// Get initial batch of data (server controls batch size)
 router.get('/api/data', (req, res) => {
   try {
-    const data = dataService.getAllData();
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 records
+    const data = dataService.getInitialBatch(limit);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to retrieve data' });

@@ -21,6 +21,10 @@ class DataService {
     return this.mockData;
   }
 
+  getInitialBatch(limit = 10) {
+    return this.mockData.slice(0, limit);
+  }
+
   getDataById(id) {
     return this.mockData.find(item => item.id === id);
   }

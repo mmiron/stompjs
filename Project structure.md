@@ -32,8 +32,8 @@ ng-ws-stomp-nodejs/
 ├── server.js                     # Backend entry point
 ├── mock-data.json               # Mock database
 ├── package.json                 # Backend dependencies
-├── README.md                     # Main documentation
-├── BACKEND_STRUCTURE.md          # Backend architecture docs
+├── Readme.md                     # Main documentation
+├── Backend structure.md          # Backend architecture docs
 └── .github/
     └── copilot-instructions.md  # Copilot configuration
 ```
@@ -47,7 +47,15 @@ ng-ws-stomp-nodejs/
 - `services/` - Application-wide services
   - `data.service.ts` - Data management
   - `locale.service.ts` - Localization
-  - `socket.service.ts` - WebSocket connectivity
+  - `stomp.service.ts` - STOMP client orchestration
+  - `socket-helpers/*` - Realtime policy helpers:
+    - `network-config.helper.ts`
+    - `runtime-config.helper.ts`
+    - `tab-lifecycle.helper.ts`
+    - `socket-health.helper.ts`
+    - `stomp-restart.helper.ts`
+    - `topic-subscription.helper.ts`
+    - `circuit-breaker.helper.ts`
 - `resolvers/` - Route guards and resolvers
   - `locale.resolve.ts` - Pre-load locale data
 
@@ -268,10 +276,10 @@ PORT=8000 npm start
 
 ## Documentation
 
-- `README.md` - This file (overview)
-- `BACKEND_STRUCTURE.md` - Backend architecture details
-- `ws-app/src/app/README.md` - Frontend architecture details
-- `ws-app/README.md` - Angular app documentation
+- `Readme.md` - This file (overview)
+- `Backend structure.md` - Backend architecture details
+- `ws-app/src/app/Readme.md` - Frontend architecture details
+- `ws-app/Readme.md` - Angular app documentation
 
 ## Project Statistics
 

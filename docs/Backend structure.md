@@ -28,7 +28,7 @@ This Node.js backend follows a clean, modular architecture suitable for scalable
 ├── mock-data.json                # Mock data file
 ├── server.js                     # Entry point
 ├── package.json                  # Dependencies
-└── README.md                     # This file
+└── Readme.md                     # This file
 ```
 
 ## File Descriptions

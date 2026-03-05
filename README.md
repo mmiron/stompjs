@@ -36,12 +36,22 @@ Supported variables:
 - `PUBLIC_HOST` (default: localhost)
 - `WS_PATH` (default: /ws)
 
-For detailed setup and troubleshooting, see **[DEVELOPER_SETUP.md](DEVELOPER_SETUP.md)**.
+For detailed setup and troubleshooting, see **[Developer setup.md](docs/Developer%20setup.md)**.
 
 ## How It Works
 - The Angular app connects to the Node.js server using STOMP over WebSocket.
 - Messages sent to `/topic/data` and `/topic/recordChanged` are broadcast to all subscribers.
 - Automatic reconnection with exponential backoff (1s → 30s) on connection loss.
+
+## Socket Helpers Overview (Frontend)
+- `stomp.service.ts` remains the STOMP lifecycle/orchestration façade.
+- `network-config.helper.ts` resolves effective reconnect/heartbeat profile.
+- `runtime-config.helper.ts` handles runtime config fetch + single-flight coordination.
+- `tab-lifecycle.helper.ts` evaluates background/foreground wake recovery decisions.
+- `socket-health.helper.ts` computes STOMP/WebSocket/UI health snapshots.
+- `stomp-restart.helper.ts` coordinates guarded restart (`deactivate -> activate`).
+- `topic-subscription.helper.ts` tracks requested topics and replaces stale subscriptions safely.
+- `circuit-breaker.helper.ts` encapsulates failure thresholds and state transitions.
 
 ## Project Structure
 
@@ -65,7 +75,7 @@ For detailed setup and troubleshooting, see **[DEVELOPER_SETUP.md](DEVELOPER_SET
 │   │   └── index.html                 # Entry HTML
 │   └── angular.json                   # Angular build config
 ├── .env.local.example                 # Environment override template
-└── DEVELOPER_SETUP.md                 # Developer guide
+└── docs/Developer setup.md            # Developer guide
 
 ```
 
@@ -85,7 +95,15 @@ npm run test:ci
 ## Customization
 - Angular code: `ws-app/src/app/`
 - Node.js server logic: `src/` directories
-- STOMP topics: See `socket.service.ts` and `stomp-server.js`
+- STOMP topics: See `stomp.service.ts` and `stomp-server.js`
+
+## Production Readiness
+- Use [Production readiness checklist.md](docs/Production%20readiness%20checklist.md) as the staging/production deployment gate.
+- Use [Stomp socket service guide.md](docs/Stomp%20socket%20service%20guide.md) for implementation patterns, failure modes, and hardening guidance.
+- Use [Stomp socket service zero to prod.md](docs/Stomp%20socket%20service%20zero%20to%20prod.md) for a beginner-friendly, codebase-independent path from fundamentals to production readiness.
+
+## Business Planning Docs
+- Use [CH-Document-Map.md](docs/CH-Document-Map.md) as the index for the full business planning and lender/investor document pack.
 
 ---
 For Copilot customization, see `.github/copilot-instructions.md`.

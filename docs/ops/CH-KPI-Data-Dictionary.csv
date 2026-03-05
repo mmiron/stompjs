@@ -1,0 +1,16 @@
+metric_name,definition,formula,frequency,owner,red_threshold,yellow_threshold,green_threshold
+Active_Members,Total paying active members at month-end,Prior_Active+New-Churned,Monthly,Ops Lead,,, 
+New_Members,New paid members added in month,Count_of_new_paid_accounts,Monthly,GTM Lead,,, 
+Churned_Members,Members canceled/lost in month,Count_of_lost_paid_accounts,Monthly,CS Lead,,, 
+Monthly_Logo_Churn,Percent of members lost in month,Churned_Members/Active_Members_Start,Monthly,CS Lead,>4.0,3.0-4.0,<3.0
+MRR,Monthly recurring revenue,Sum_subscription_revenue_monthly,Monthly,Finance Lead,,, 
+ARPM,Average revenue per member per month,Revenue/Active_Members_End,Monthly,Finance Lead,,, 
+Gross_Margin_Percent,Revenue after COGS,((Revenue-COGS)/Revenue)*100,Monthly,Finance Lead,<47,47-50,>50
+CAC,Cost to acquire one new member,Sales_Marketing_Spend/New_Members,Monthly,GTM Lead,,, 
+CAC_Payback_Months,Months to recover CAC from gross profit,CAC/(ARPM*Gross_Margin),Monthly,Finance Lead,>6,4-6,<4
+First_Response_Time_Hours,Time to first support response,Avg_hours_first_response,Weekly,Support Lead,>8,4-8,<4
+Resolution_Time_Hours,Time to close support request,Avg_hours_resolution,Weekly,Support Lead,>72,36-72,<36
+SLA_Breach_Count,Count of tickets breaching SLA,Count_breached_tickets,Weekly,Support Lead,High,Rising,Low
+AI_Deflection_Percent,Share of tickets resolved without human agent,AI_resolved/Total_tickets*100,Weekly,Ops Lead,<20,20-35,>35
+Ending_Cash,Cash at month-end,Prior_Cash+Net_Cash_Change,Monthly,Finance Lead,<6m_runway,6-9m_runway,>9m_runway
+Runway_Months,How long cash lasts at current burn,Ending_Cash/Avg_Monthly_Net_Burn,Monthly,Finance Lead,<6,6-9,>9

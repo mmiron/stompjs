@@ -3,6 +3,7 @@ const cors = require('cors');
 const corsConfig = require('../config/cors.config');
 const corsMiddleware = require('../middleware/cors.middleware');
 const dataRoutes = require('../routes/data.routes');
+const runtimeConfigRoutes = require('../routes/runtime-config.routes');
 
 class ServerInitializer {
   static createExpressApp() {
@@ -15,6 +16,7 @@ class ServerInitializer {
 
     // Routes
     app.use(dataRoutes);
+    app.use(runtimeConfigRoutes);
 
     // Error handling middleware
     app.use((err, req, res, next) => {

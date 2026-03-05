@@ -14,7 +14,7 @@ src/app/ ❌ 30+ files mixed together
 ├── pdf-extract.component.*
 ├── pdf-extract.service.*
 ├── qr-extract.component.*
-├── socket.service.ts
+├── stomp.service.ts
 ├── data.service.*
 ├── locale.service.*
 ├── locale.resolve.ts
@@ -38,7 +38,7 @@ src/app/ ✅ Organized by functional area
 │   ├── services/
 │   │   ├── data.service.*
 │   │   ├── locale.service.*
-│   │   ├── socket.service.ts
+│   │   ├── stomp.service.ts
 │   │   └── index.ts
 │   ├── resolvers/
 │   │   ├── locale.resolve.ts
@@ -78,7 +78,7 @@ src/app/ ✅ Organized by functional area
 ├── app.component.*
 ├── app.routes.ts
 ├── app.config.ts
-└── README.md
+└── Readme.md
 
 Benefits: Clear hierarchy, easy to find files,
 scalable structure, ready for growth
@@ -304,10 +304,10 @@ Before Organization:
 - Hard to explain architecture
 
 After Organization:
-- Main README (PROJECT_STRUCTURE.md)
-- Frontend Guide (ws-app/src/app/README.md)
-- Backend Guide (BACKEND_STRUCTURE.md)  
-- Summary (ORGANIZATION_SUMMARY.md)
+- Main README (Project structure.md)
+- Frontend Guide (ws-app/src/app/Readme.md)
+- Backend Guide (Backend structure.md)  
+- Summary (Organization summary.md)
 - 4 comprehensive documents!
 ```
 

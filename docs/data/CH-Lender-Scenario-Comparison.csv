@@ -1,0 +1,10 @@
+metric,low_case,base_case,high_case,unit
+ARPM,260,300,360,CAD_per_member_per_month
+Monthly_Churn_Modeled,4.0,2.5,1.8,percent
+Gross_Margin_Y1,44.0,48.0,52.0,percent
+Gross_Margin_Y2,47.1,52.0,56.0,percent
+Ending_Active_Members_M24,319,1245,1512,count
+Year2_Revenue,705380,2733000,4307040,CAD
+Year2_Gross_Profit,332229,1421160,2411942,CAD
+Year2_EBITDA_Proxy,-777771,-12840,809942,CAD
+Ending_Cash_M24,-438587,401720,1180499,CAD

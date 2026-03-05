@@ -36,7 +36,7 @@ src/app/
 ├── app.routes.ts
 ├── app.config.ts
 ├── app.component.*, and
-└── README.md
+└── Readme.md
 ```
 
 **Benefits**:
@@ -89,7 +89,7 @@ server.js (orchestrates all modules)
 **Core Services** (moved to `src/app/core/services/`):
 - data.service.ts & spec
 - locale.service.ts & spec
-- socket.service.ts
+- stomp.service.ts
 
 **Core Resolvers** (moved to `src/app/core/resolvers/`):
 - locale.resolve.ts (updated imports)
@@ -150,21 +150,21 @@ Frontend barrel exports for cleaner imports:
 ## Documentation Created
 
 ### Frontend Documentation
-- `ws-app/src/app/README.md` - Comprehensive frontend architecture guide
+- `ws-app/src/app/Readme.md` - Comprehensive frontend architecture guide
   - Folder organization
   - Best practices
   - Import guidelines
   - File naming conventions
 
 ### Backend Documentation
-- `BACKEND_STRUCTURE.md` - Detailed backend architecture
+- `Backend structure.md` - Detailed backend architecture
   - Folder descriptions
   - API endpoints
   - WebSocket topics
   - Usage examples
 
 ### Project Documentation
-- `PROJECT_STRUCTURE.md` - Full project overview
+- `Project structure.md` - Full project overview
   - Technology stack
   - Development workflow
   - Import guidelines

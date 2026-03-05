@@ -1,0 +1,8 @@
+milestone,trigger_metric,trigger_threshold,role_to_hire,rationale
+Early operations,Active members,>=40,Ops Coordinator,Protect onboarding quality and response times
+Support load,Monthly tickets,>=250,Customer Success Manager,Prevent SLA drift and churn
+Data complexity,Manual reporting hours,>=20/month,Data/QA Analyst,Improve KPI reliability and automation
+Partner volume,Partner-managed cases,>=120/month,Partner Manager,Maintain quality and redundancy controls
+Growth scale,Active members,>=300,Head of Operations,Coordinate cross-functional delivery
+Automation demand,Workflow exceptions,>=60/month,Automation Engineer,Reduce repetitive manual work
+Compliance exposure,Regulatory escalations,>=3/quarter,Compliance Lead,Strengthen control environment

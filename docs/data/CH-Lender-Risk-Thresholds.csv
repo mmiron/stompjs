@@ -1,0 +1,6 @@
+metric,green,yellow,red,unit
+Monthly_Churn,<3.0,3.0-4.0,>4.0,percent
+Gross_Margin,>50,47-50,<47,percent
+CAC_Payback,<4,4-6,>6,months
+Cash_Runway,>9,6-9,<6,months
+SLA_Misses,Low/Stable,Rising,Persistent_High,qualitative

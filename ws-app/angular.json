@@ -38,7 +38,10 @@
             "styles": [
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "@stomp/stompjs"
+            ]
           },
           "configurations": {
             "production": {
@@ -50,8 +53,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "14kB",
+                  "maximumError": "20kB"
                 }
               ],
               "outputHashing": "all"

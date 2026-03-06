@@ -15,9 +15,15 @@ class StompServerManager {
     this.stompServer.on('subscribe', (frame) => {
       if (frame && frame.headers) {
         console.log('Client subscribed:', frame.headers.id || 'unknown', 'to', frame.headers.destination);
-        const allData = dataService.getAllData();
-        if (frame.headers.destination) {
-          this.stompServer.send(frame.headers.destination, {}, JSON.stringify(allData));
+        const destination = frame.headers.destination;
+        if (destination && destination.startsWith('/topic/initData')) {
+          setTimeout(() => {
+            this.stompServer.send(
+              destination,
+              {},
+              JSON.stringify({ currentDateTime: new Date().toISOString() }),
+            );
+          }, 0);
         }
       } else {
         console.log('Client subscribed with null/undefined frame headers');
@@ -35,7 +41,23 @@ class StompServerManager {
 
     // Handle incoming messages
     this.stompServer.on('send', (frame) => {
-      if (frame && frame.body) {
+      if (!frame) {
+        return;
+      }
+
+      const destination = frame?.headers?.destination || frame?.destination;
+      if (destination && destination.startsWith('/app/initData')) {
+        const topicDestination = destination.replace('/app/initData', '/topic/initData');
+        console.log('Init data request received for destination:', destination);
+        this.stompServer.send(
+          topicDestination,
+          {},
+          JSON.stringify({ currentDateTime: new Date().toISOString() }),
+        );
+        return;
+      }
+
+      if (frame.body) {
         console.log('Message received:', frame.body);
         // Process message and broadcast if needed
       }

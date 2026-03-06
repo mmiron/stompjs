@@ -121,7 +121,8 @@ export class PerformanceDashboardComponent implements OnInit {
   }
 
   private subscribeToSocketEvents(): void {
-    this.stompService.connectToEvents([
+    this.stompService.connectSocket();
+    this.stompService.subscribeToEvents([
       { event: 'dataUpdate', topicParam: 0 },
     ]);
 

@@ -3,10 +3,10 @@ import { LocaleService } from '../../core/services/locale.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { FILTER_FORM_TOKEN, CLEAR_FILTERS_TOKEN } from './table-filter.component';
-import { Injector, inject, signal as ngSignal } from '@angular/core';
+import { Injector, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { StompService } from '../../core/services/stomp.service';
+import { StompService, InitDataPayload } from '../../core/services/stomp.service';
 import { DataRecordViewModel } from '../../shared/models/data-record.view-model';
 import { DataRecordPayload } from '../../shared/models/data.model';
 import { RowDetailsComponent } from './row-details.component';
@@ -36,7 +36,6 @@ export class TableComponent implements OnInit, OnDestroy {
     updatedAt: new FormControl(''),
     tags: new FormControl(''),
   });
-  filterValues: Record<string, any> = {};
 
   private subscriptions: Subscription[] = [];
 
@@ -60,7 +59,6 @@ export class TableComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     await this.locale.load('en');
-    this.loadData();
     this.subscribeToSocketEvents();
   }
 
@@ -91,14 +89,29 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stompService.unsubscribeAll();
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   private subscribeToSocketEvents(): void {
-    this.stompService.connectToEvents([
+    this.stompService.subscribeToEvents([
+      { event: 'initData' },
       { event: 'dataUpdate', topicParam: 0 },
       { event: 'recordChanged', topicParam: 0 },
     ]);
+    this.stompService.requestInitData();
+
+    const initDataSub = this.stompService.initData$.subscribe(
+      (initData: InitDataPayload) => {
+        console.log('Init data received via STOMP:', initData);
+        if (this.data().length > 0) {
+          return;
+        }
+
+        const seedRecord = this.createSeedRecord(initData.currentDateTime);
+        this.data.set([new DataRecordViewModel(seedRecord)]);
+      },
+    );
 
     // Subscribe to real-time data updates from STOMP (single record at a time)
     const dataUpdateSub = this.stompService.dataUpdate$.subscribe((record: DataRecordPayload) => {
@@ -138,12 +151,21 @@ export class TableComponent implements OnInit, OnDestroy {
       console.error('STOMP error:', error);
     });
 
-    this.subscriptions.push(dataUpdateSub, recordChangedSub, errorSub);
+    this.subscriptions.push(initDataSub, dataUpdateSub, recordChangedSub, errorSub);
   }
 
-  private loadData(): void {
-    // Request initial data batch via STOMP
-    this.stompService.requestData(0, 8);
+  private createSeedRecord(currentDateTime: string): DataRecordPayload {
+    const timestamp =
+      Number(new Date(currentDateTime)) || Number(new Date());
+
+    return {
+      id: timestamp,
+      name: 'Init seed record',
+      description: `Seeded from initData at ${currentDateTime}`,
+      createdAt: currentDateTime,
+      updatedAt: currentDateTime,
+      tags: [],
+    };
   }
 
   toggleRow(item: DataRecordViewModel): void {

@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy, signal } from '@angular/core';
 import { Client, IMessage, IFrame } from '@stomp/stompjs';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, filter, take } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { DataRecordPayload } from '../../shared/models/data.model';
 import {
@@ -39,11 +39,13 @@ type SocketConnectionState =
   | 'connecting'
   | 'reconnecting'
   | 'connected';
-export type SocketTopicEvent = 'dataUpdate' | 'recordChanged';
-export interface SocketTopicRequest {
-  event: SocketTopicEvent;
-  topicParam: number;
+export type SocketTopicEvent = 'dataUpdate' | 'recordChanged' | 'initData';
+export interface InitDataPayload {
+  currentDateTime: string;
 }
+export type SocketTopicRequest =
+  | { event: 'initData' }
+  | { event: 'dataUpdate' | 'recordChanged'; topicParam: number };
 
 const TELEMETRY_EVENTS = {
   STOMP_DEACTIVATE_ERROR: 'stomp_deactivate_error',
@@ -77,7 +79,7 @@ const TELEMETRY_EVENTS = {
  * --------------------
  * [disconnected]
  *      |
- *      | connectToEvents()
+ *      | subscribeToEvents()
  *      v
  * [connecting] --(success)----------------------------> [connected]
  *      |                                                  |
@@ -115,7 +117,7 @@ const TELEMETRY_EVENTS = {
  *
  * Notes
  * -----
- * - connectToEvents() is idempotent and lazy: creates/activates client only when needed.
+ * - subscribeToEvents() is idempotent and lazy: creates/activates client only when needed.
  * - Topic subscriptions are re-established on connect and replaced safely per destination.
  * - Runtime network config can override defaults and is clamped to safe bounds.
  */
@@ -127,6 +129,7 @@ export class StompService implements OnDestroy {
   private stompClient!: Client;
   private dataUpdateSubject = new Subject<DataRecordPayload>();
   private recordChangedSubject = new Subject<DataRecordPayload>();
+  private initDataSubject = new Subject<InitDataPayload>();
   private errorSubject = new Subject<unknown>();
   private reconnectedSubject = new Subject<void>();
   private connectionStateSubject = new BehaviorSubject<SocketConnectionState>(
@@ -177,24 +180,21 @@ export class StompService implements OnDestroy {
 
   public dataUpdate$ = this.dataUpdateSubject.asObservable();
   public recordChanged$ = this.recordChangedSubject.asObservable();
+  public initData$ = this.initDataSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
   public reconnected$ = this.reconnectedSubject.asObservable();
   public connectionState$ = this.connectionStateSubject.asObservable();
 
   constructor() {
-    // Connection is established lazily via connectToEvents().
+    // Connection is established lazily via connectSocket()/subscribeToEvents().
     this.refreshNetworkConfig();
     this.prefetchRuntimeSocketConfig();
   }
 
   /**
-   * Enables one or more STOMP event streams and ensures the socket is connected.
-   * Parent components call this to opt in only to the subscriptions they need.
+   * Establishes (or reuses) the underlying STOMP connection without changing topic subscriptions.
    */
-  public connectToEvents(events: SocketTopicRequest[]): void {
-    this.validateTopicRequests(events);
-    this.topicSubscriptionManager.requestBindings(events);
-
+  public connectSocket(): void {
     if (!this.stompClient) {
       const inFlightRuntimeConfig =
         this.runtimeConfigCoordinator.getInFlightPromise();
@@ -212,6 +212,18 @@ export class StompService implements OnDestroy {
 
     if (!this.stompClient.active) {
       this.stompClient.activate();
+    }
+  }
+
+  /**
+   * Adds one or more topic subscriptions while keeping the current connection alive.
+   */
+  public subscribeToEvents(events: SocketTopicRequest[]): void {
+    this.validateTopicRequests(events);
+    this.topicSubscriptionManager.requestBindings(events);
+
+    if (!this.stompClient || !this.stompClient.active) {
+      this.connectSocket();
       return;
     }
 
@@ -220,29 +232,50 @@ export class StompService implements OnDestroy {
     }
   }
 
+  /**
+   * Removes all topic subscriptions without disconnecting the socket.
+   */
+  public unsubscribeAll(): void {
+    this.topicSubscriptionManager.clearRequestedBindings();
+    this.topicSubscriptionManager.clearSubscriptions();
+  }
+
   private validateTopicRequests(events: SocketTopicRequest[]): void {
     if (!Array.isArray(events) || events.length === 0) {
       throw new Error(
-        'connectToEvents requires a non-empty array of topic requests',
+        'subscribeToEvents requires a non-empty array of topic requests',
       );
     }
 
     events.forEach((request, index) => {
       if (!request || typeof request !== 'object') {
         throw new Error(
-          `connectToEvents request at index ${index} must be an object`,
+          `subscribeToEvents request at index ${index} must be an object`,
         );
       }
 
-      if (request.event !== 'dataUpdate' && request.event !== 'recordChanged') {
+      if (
+        request.event !== 'dataUpdate' &&
+        request.event !== 'recordChanged' &&
+        request.event !== 'initData'
+      ) {
         throw new Error(
-          `connectToEvents request at index ${index} has an unsupported event`,
+          `subscribeToEvents request at index ${index} has an unsupported event`,
         );
+      }
+
+      if (request.event === 'initData') {
+        if ('topicParam' in request && request.topicParam !== undefined) {
+          throw new Error(
+            `subscribeToEvents request at index ${index} for initData must not include topicParam`,
+          );
+        }
+        return;
       }
 
       if (!Number.isInteger(request.topicParam) || request.topicParam < 0) {
         throw new Error(
-          `connectToEvents request at index ${index} must include a non-negative integer topicParam`,
+          `subscribeToEvents request at index ${index} must include a non-negative integer topicParam`,
         );
       }
     });
@@ -529,6 +562,14 @@ export class StompService implements OnDestroy {
     }
 
     this.subscribeToRequestedTopics();
+
+    if (
+      this.topicSubscriptionManager
+        .getRequestedBindings()
+        .some((binding) => binding.event === 'initData')
+    ) {
+      this.requestInitData();
+    }
   }
 
   /**
@@ -841,9 +882,29 @@ export class StompService implements OnDestroy {
     }
   }
 
-  public requestData(page: number = 0, limit: number = 8): void {
-    // No longer needed - data is pushed from server automatically
-    console.log('Data is pushed from server every 5 seconds');
+  public requestInitData(): void {
+    const publishInitDataRequest = () => {
+      this.stompClient.publish({
+        destination: '/app/initData',
+        body: JSON.stringify({ requestedAt: new Date().toISOString() }),
+      });
+    };
+
+    if (!this.stompClient || !this.stompClient.active) {
+      this.connectSocket();
+    }
+
+    if (this.stompClient?.connected) {
+      publishInitDataRequest();
+      return;
+    }
+
+    this.connectionState$
+      .pipe(
+        filter((state) => state === 'connected'),
+        take(1),
+      )
+      .subscribe(() => publishInitDataRequest());
   }
 
   /**
@@ -875,6 +936,32 @@ export class StompService implements OnDestroy {
       return null;
     } catch (error) {
       console.error('Failed to parse STOMP message body:', error);
+      this.errorSubject.next(error);
+      return null;
+    }
+  }
+
+  private parseInitDataMessage(message: IMessage): InitDataPayload | null {
+    try {
+      const payload: unknown = JSON.parse(message.body);
+
+      if (
+        payload &&
+        typeof payload === 'object' &&
+        typeof (payload as { currentDateTime?: unknown }).currentDateTime ===
+          'string'
+      ) {
+        return payload as InitDataPayload;
+      }
+
+      if (typeof payload === 'string') {
+        return { currentDateTime: payload };
+      }
+
+      console.warn('Ignoring initData payload with unexpected shape:', payload);
+      return null;
+    } catch (error) {
+      console.error('Failed to parse initData STOMP message body:', error);
       this.errorSubject.next(error);
       return null;
     }
@@ -997,6 +1084,7 @@ export class StompService implements OnDestroy {
     // Close all subjects
     this.dataUpdateSubject.complete();
     this.recordChangedSubject.complete();
+    this.initDataSubject.complete();
     this.errorSubject.complete();
     this.reconnectedSubject.complete();
     this.connectionStateSubject.complete();
@@ -1013,11 +1101,11 @@ export class StompService implements OnDestroy {
    * Unsubscribes all tracked topic subscriptions and resets the subscription map.
    */
   private clearTopicSubscriptions(): void {
-    this.topicSubscriptionManager.clearSubscriptions();
+    this.unsubscribeAll();
   }
 
   /**
-   * Subscribes only to topics requested by parent components via connectToEvents().
+    * Subscribes only to topics requested by parent components via subscribeToEvents().
    */
   private subscribeToRequestedTopics(): void {
     const bindings = this.topicSubscriptionManager
@@ -1028,17 +1116,22 @@ export class StompService implements OnDestroy {
   }
 
   private buildTopicBinding(
-    request: SocketTopicRequest,
-  ): Required<Pick<SocketTopicRequest, 'event'>> & {
+    request: { event: SocketTopicEvent; topicParam?: number },
+  ): {
+    event: SocketTopicEvent;
     destination: string;
-    topicParam: number;
+    topicParam?: number;
     handler: (message: IMessage) => void;
   } {
     if (request.event === 'dataUpdate') {
+      const topicParam = request.topicParam ?? 0;
       return {
         event: request.event,
-        topicParam: request.topicParam,
-        destination: this.withTopicParam('/topic/data', request.topicParam),
+        topicParam,
+        destination:
+          topicParam === 0
+            ? '/topic/data'
+            : `/topic/data/${topicParam}`,
         handler: (message: IMessage) => {
           const record = this.parseRecordMessage(message);
           if (record) {
@@ -1048,25 +1141,38 @@ export class StompService implements OnDestroy {
       };
     }
 
-    return {
-      event: request.event,
-      topicParam: request.topicParam,
-      destination: this.withTopicParam('/topic/recordChanged', request.topicParam),
-      handler: (message: IMessage) => {
-        const record = this.parseRecordMessage(message);
-        if (record) {
-          this.recordChangedSubject.next(record);
-        }
-      },
-    };
-  }
-
-  private withTopicParam(destination: string, topicParam?: number): string {
-    if (topicParam === undefined || topicParam === null || topicParam === 0) {
-      return destination;
+    if (request.event === 'recordChanged') {
+      const topicParam = request.topicParam ?? 0;
+      return {
+        event: request.event,
+        topicParam,
+        destination:
+          topicParam === 0
+            ? '/topic/recordChanged'
+            : `/topic/recordChanged/${topicParam}`,
+        handler: (message: IMessage) => {
+          const record = this.parseRecordMessage(message);
+          if (record) {
+            this.recordChangedSubject.next(record);
+          }
+        },
+      };
     }
 
-    return `${destination}/${topicParam}`;
+    if (request.event === 'initData') {
+      return {
+        event: request.event,
+        destination: '/topic/initData',
+        handler: (message: IMessage) => {
+          const initData = this.parseInitDataMessage(message);
+          if (initData) {
+            this.initDataSubject.next(initData);
+          }
+        },
+      };
+    }
+
+    throw new Error(`Unsupported event binding: ${String(request.event)}`);
   }
 
   /**

@@ -1,9 +1,17 @@
 
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, isDevMode, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  computed,
+  inject,
+  isDevMode,
+  signal,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { LoadTestMetrics } from './core/services/load-test.service';
+import { StompService } from './core/services/stomp.service';
 import { ConnectionStatusComponent } from './shared/components/connection-status.component';
 import { LoadTestRunnerComponent } from './shared/components/load-test-runner.component';
 
@@ -19,8 +27,9 @@ import { LoadTestRunnerComponent } from './shared/components/load-test-runner.co
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
   private router = inject(Router);
+  private stompService = inject(StompService);
 
   title = 'ws-app';
   isDevelopment = isDevMode();
@@ -31,6 +40,8 @@ export class AppComponent {
   );
 
   constructor() {
+    this.stompService.connectSocket();
+
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event) => {
@@ -40,5 +51,9 @@ export class AppComponent {
 
   onGlobalLoadTestCompleted(metrics: LoadTestMetrics): void {
     console.log('Global load test completed:', metrics);
+  }
+
+  ngOnDestroy(): void {
+    this.stompService.disconnect();
   }
 }

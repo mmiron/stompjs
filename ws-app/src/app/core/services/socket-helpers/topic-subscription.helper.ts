@@ -3,13 +3,13 @@ import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 export interface TopicBinding<TEvent extends string> {
   event: TEvent;
   destination: string;
-  topicParam: number;
+  topicParam?: number;
   handler: (message: IMessage) => void;
 }
 
 export interface RequestedTopicBinding<TEvent extends string> {
   event: TEvent;
-  topicParam: number;
+  topicParam?: number;
 }
 
 /**
@@ -24,10 +24,7 @@ export class StompTopicSubscriptionManager<TEvent extends string> {
 
   public requestBindings(bindings: RequestedTopicBinding<TEvent>[]): void {
     bindings.forEach((binding) => {
-      this.requestedTopicBindings.set(
-        this.createBindingKey(binding.event, binding.topicParam),
-        binding,
-      );
+      this.requestedTopicBindings.set(binding.event, binding);
     });
   }
 
@@ -35,13 +32,26 @@ export class StompTopicSubscriptionManager<TEvent extends string> {
     return Array.from(this.requestedTopicBindings.values());
   }
 
-  public syncSubscriptions(client: Client, bindings: TopicBinding<TEvent>[]): void {
+  public removeBindings(bindings: RequestedTopicBinding<TEvent>[]): void {
     bindings.forEach((binding) => {
-      if (
-        !this.requestedTopicBindings.has(
-          this.createBindingKey(binding.event, binding.topicParam),
-        )
-      ) {
+      this.requestedTopicBindings.delete(binding.event);
+    });
+  }
+
+  public syncSubscriptions(client: Client, bindings: TopicBinding<TEvent>[]): void {
+    const desiredDestinations = new Set(
+      bindings.map((binding) => binding.destination),
+    );
+
+    this.topicSubscriptions.forEach((subscription, destination) => {
+      if (!desiredDestinations.has(destination)) {
+        subscription.unsubscribe();
+        this.topicSubscriptions.delete(destination);
+      }
+    });
+
+    bindings.forEach((binding) => {
+      if (!this.requestedTopicBindings.has(binding.event)) {
         return;
       }
 
@@ -55,12 +65,22 @@ export class StompTopicSubscriptionManager<TEvent extends string> {
     });
   }
 
+  public unsubscribeDestination(destination: string): void {
+    const existingSubscription = this.topicSubscriptions.get(destination);
+    if (!existingSubscription) {
+      return;
+    }
+
+    existingSubscription.unsubscribe();
+    this.topicSubscriptions.delete(destination);
+  }
+
   public clearSubscriptions(): void {
     this.topicSubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.topicSubscriptions.clear();
   }
 
-  private createBindingKey(event: TEvent, topicParam: number): string {
-    return `${event}:${topicParam}`;
+  public clearRequestedBindings(): void {
+    this.requestedTopicBindings.clear();
   }
 }

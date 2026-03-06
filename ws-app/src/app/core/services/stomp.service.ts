@@ -1105,7 +1105,7 @@ export class StompService implements OnDestroy {
   }
 
   /**
-    * Subscribes only to topics requested by parent components via subscribeToEvents().
+   * Subscribes only to topics requested by parent components via subscribeToEvents().
    */
   private subscribeToRequestedTopics(): void {
     const bindings = this.topicSubscriptionManager
@@ -1115,9 +1115,10 @@ export class StompService implements OnDestroy {
     this.topicSubscriptionManager.syncSubscriptions(this.stompClient, bindings);
   }
 
-  private buildTopicBinding(
-    request: { event: SocketTopicEvent; topicParam?: number },
-  ): {
+  private buildTopicBinding(request: {
+    event: SocketTopicEvent;
+    topicParam?: number;
+  }): {
     event: SocketTopicEvent;
     destination: string;
     topicParam?: number;
@@ -1129,9 +1130,7 @@ export class StompService implements OnDestroy {
         event: request.event,
         topicParam,
         destination:
-          topicParam === 0
-            ? '/topic/data'
-            : `/topic/data/${topicParam}`,
+          topicParam === 0 ? '/topic/data' : `/topic/data/${topicParam}`,
         handler: (message: IMessage) => {
           const record = this.parseRecordMessage(message);
           if (record) {

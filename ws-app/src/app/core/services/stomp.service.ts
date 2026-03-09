@@ -39,6 +39,25 @@ type SocketConnectionState =
   | 'connecting'
   | 'reconnecting'
   | 'connected';
+type SocketConnectionReason =
+  | 'initial'
+  | 'before_connect_initial'
+  | 'before_connect_retry'
+  | 'connect_success'
+  | 'browser_offline'
+  | 'browser_online'
+  | 'socket_closed'
+  | 'socket_error'
+  | 'manual_disconnect'
+  | 'max_reconnect_attempts'
+  | 'heartbeat_lost';
+
+export interface SocketConnectionEvent {
+  state: SocketConnectionState;
+  reason: SocketConnectionReason;
+  reconnectAttempt: number;
+  at: string;
+}
 export type SocketTopicEvent = 'dataUpdate' | 'recordChanged' | 'initData';
 export interface InitDataPayload {
   currentDateTime: string;
@@ -70,6 +89,8 @@ const TELEMETRY_EVENTS = {
   TAB_WAKE_HEALTHY_SKIP_RECONNECT: 'tab_wake_healthy_skip_reconnect',
   RESTART_SUPPRESSED_IN_FLIGHT: 'restart_suppressed_in_flight',
   RESTART_SKIPPED_STATE: 'restart_skipped_state',
+  HEARTBEAT_LOST: 'heartbeat_lost',
+  HEARTBEAT_WATCHDOG_TIMEOUT: 'heartbeat_watchdog_timeout',
 } as const;
 
 /**
@@ -132,6 +153,7 @@ export class StompService implements OnDestroy {
   private initDataSubject = new Subject<InitDataPayload>();
   private errorSubject = new Subject<unknown>();
   private reconnectedSubject = new Subject<void>();
+  private connectionEventSubject = new Subject<SocketConnectionEvent>();
   private connectionStateSubject = new BehaviorSubject<SocketConnectionState>(
     'disconnected',
   );
@@ -153,6 +175,8 @@ export class StompService implements OnDestroy {
 
   // Resource cleanup tracking
   private healthCheckInterval: ReturnType<typeof setInterval> | null = null;
+  private heartbeatWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastHeartbeatReceivedAtMs: number | null = null;
   private offlineDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private offlineHandler: (() => void) | null = null;
   private onlineHandler: (() => void) | null = null;
@@ -183,6 +207,7 @@ export class StompService implements OnDestroy {
   public initData$ = this.initDataSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
   public reconnected$ = this.reconnectedSubject.asObservable();
+  public connectionEvents$ = this.connectionEventSubject.asObservable();
   public connectionState$ = this.connectionStateSubject.asObservable();
 
   constructor() {
@@ -300,6 +325,76 @@ export class StompService implements OnDestroy {
     }
   }
 
+  private clearHeartbeatWatchdog(): void {
+    if (this.heartbeatWatchdogTimer) {
+      clearTimeout(this.heartbeatWatchdogTimer);
+      this.heartbeatWatchdogTimer = null;
+    }
+  }
+
+  private emitConnectionState(
+    state: SocketConnectionState,
+    reason: SocketConnectionReason,
+  ): void {
+    this.connectionStateSubject.next(state);
+    this.connectionEventSubject.next({
+      state,
+      reason,
+      reconnectAttempt: this.reconnectAttempt,
+      at: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Arms a watchdog timer that triggers recovery if incoming heartbeats stop.
+   */
+  private scheduleHeartbeatWatchdog(): void {
+    this.clearHeartbeatWatchdog();
+
+    const heartbeatMs = this.networkConfig.stompHeartbeatMs;
+    if (!heartbeatMs || heartbeatMs <= 0) {
+      return;
+    }
+
+    const watchdogTimeoutMs = Math.max(heartbeatMs * 2, heartbeatMs + 1000);
+    this.heartbeatWatchdogTimer = setTimeout(() => {
+      if (this.manualDisconnect || this.networkOffline || !this.stompClient) {
+        return;
+      }
+
+      this.logConnectionEvent(TELEMETRY_EVENTS.HEARTBEAT_WATCHDOG_TIMEOUT, {
+        heartbeatMs,
+        watchdogTimeoutMs,
+        lastHeartbeatReceivedAt: this.lastHeartbeatReceivedAtMs,
+      });
+
+      this.handleHeartbeatLost('watchdog_timeout');
+    }, watchdogTimeoutMs);
+  }
+
+  private handleHeartbeatReceived(): void {
+    this.lastHeartbeatReceivedAtMs = Date.now();
+    this.scheduleHeartbeatWatchdog();
+  }
+
+  private handleHeartbeatLost(reason: 'stomp_callback' | 'watchdog_timeout'): void {
+    if (this.manualDisconnect || this.networkOffline || !this.stompClient) {
+      return;
+    }
+
+    this.logConnectionEvent(TELEMETRY_EVENTS.HEARTBEAT_LOST, {
+      reason,
+      reconnectAttempt: this.reconnectAttempt,
+      connected: this.stompClient.connected,
+      active: this.stompClient.active,
+      lastHeartbeatReceivedAt: this.lastHeartbeatReceivedAtMs,
+    });
+
+    this.setDisconnectedState(true);
+    this.emitConnectionState('reconnecting', 'heartbeat_lost');
+    this.restartActiveClient();
+  }
+
   /**
    * Performs a guarded client restart (`deactivate` -> `activate`) as a single-flight operation.
    * Suppresses overlapping restarts and skips reactivation when state changes to offline or manual disconnect.
@@ -358,6 +453,9 @@ export class StompService implements OnDestroy {
     });
 
     this.stompClient.onConnect = () => this.handleConnectSuccess();
+    this.stompClient.onHeartbeatReceived = () => this.handleHeartbeatReceived();
+    this.stompClient.onHeartbeatLost = () =>
+      this.handleHeartbeatLost('stomp_callback');
     this.stompClient.onStompError = (frame: IFrame) =>
       this.handleStompError(frame);
     this.stompClient.onWebSocketClose = () => this.handleWebSocketClose();
@@ -503,7 +601,7 @@ export class StompService implements OnDestroy {
    */
   private async handleBeforeConnect(): Promise<void> {
     if (!navigator.onLine || this.networkOffline) {
-      this.connectionStateSubject.next('reconnecting');
+      this.emitConnectionState('reconnecting', 'browser_offline');
       this.setDisconnectedState(true);
       throw new Error('Browser offline, skipping STOMP connect attempt');
     }
@@ -525,15 +623,16 @@ export class StompService implements OnDestroy {
         attempt: this.reconnectAttempt,
       });
       this.setDisconnectedState(false);
+      this.emitConnectionState('disconnected', 'max_reconnect_attempts');
       return;
     }
 
     if (this.reconnectAttempt === 0) {
-      this.connectionStateSubject.next('connecting');
+      this.emitConnectionState('connecting', 'before_connect_initial');
       return;
     }
 
-    this.connectionStateSubject.next('reconnecting');
+    this.emitConnectionState('reconnecting', 'before_connect_retry');
     const reconnectDelay = this.calculateReconnectDelayMs(
       this.reconnectAttempt,
     );
@@ -551,9 +650,11 @@ export class StompService implements OnDestroy {
     const isReconnection = this.reconnectAttempt > 0;
     this.reconnectAttempt = 0;
     this.resetCircuitBreaker();
-    this.connectionStateSubject.next('connected');
+    this.emitConnectionState('connected', 'connect_success');
     this.online.set(true);
     this.isReconnecting.set(false);
+    this.lastHeartbeatReceivedAtMs = Date.now();
+    this.scheduleHeartbeatWatchdog();
     console.log('Connected to STOMP server');
 
     if (isReconnection) {
@@ -589,17 +690,19 @@ export class StompService implements OnDestroy {
   private handleWebSocketClose(): void {
     if (this.manualDisconnect) {
       this.manualDisconnect = false;
-      this.connectionStateSubject.next('disconnected');
+      this.emitConnectionState('disconnected', 'manual_disconnect');
       this.setDisconnectedState(false);
       this.clearTopicSubscriptions();
+      this.clearHeartbeatWatchdog();
       return;
     }
 
     this.reconnectAttempt += 1;
     this.recordCircuitBreakerFailure();
-    this.connectionStateSubject.next('reconnecting');
+    this.emitConnectionState('reconnecting', 'socket_closed');
     this.setDisconnectedState(true);
     this.clearTopicSubscriptions();
+    this.clearHeartbeatWatchdog();
     console.log('Disconnected from STOMP server');
   }
 
@@ -613,6 +716,7 @@ export class StompService implements OnDestroy {
     });
     this.recordCircuitBreakerFailure();
     this.setDisconnectedState(true);
+    this.emitConnectionState('reconnecting', 'socket_error');
     this.errorSubject.next(event);
   }
 
@@ -625,6 +729,7 @@ export class StompService implements OnDestroy {
     this.logConnectionEvent(TELEMETRY_EVENTS.BROWSER_OFFLINE, {});
     this.networkOffline = true;
     this.setDisconnectedState(true);
+    this.emitConnectionState('reconnecting', 'browser_offline');
     this.clearOfflineDebounceTimer();
 
     this.offlineDebounceTimer = setTimeout(() => {
@@ -663,6 +768,7 @@ export class StompService implements OnDestroy {
     this.clearOfflineDebounceTimer();
     this.isReconnecting.set(true);
     this.reconnectAttempt = 0;
+    this.emitConnectionState('reconnecting', 'browser_online');
 
     if (!this.stompClient) {
       return;
@@ -686,6 +792,8 @@ export class StompService implements OnDestroy {
       clearInterval(this.healthCheckInterval);
       this.healthCheckInterval = null;
     }
+
+    this.clearHeartbeatWatchdog();
 
     this.healthCheckInterval = setInterval(() => {
       this.runConnectionHealthCheck('interval');
@@ -1002,8 +1110,9 @@ export class StompService implements OnDestroy {
     if (this.stompClient && this.stompClient.active) {
       this.manualDisconnect = true;
       this.clearTopicSubscriptions();
+      this.clearHeartbeatWatchdog();
       this.stompClient.deactivate();
-      this.connectionStateSubject.next('disconnected');
+      this.emitConnectionState('disconnected', 'manual_disconnect');
     }
   }
 
@@ -1087,6 +1196,7 @@ export class StompService implements OnDestroy {
     this.initDataSubject.complete();
     this.errorSubject.complete();
     this.reconnectedSubject.complete();
+    this.connectionEventSubject.complete();
     this.connectionStateSubject.complete();
   }
 

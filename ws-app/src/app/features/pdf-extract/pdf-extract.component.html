@@ -9,6 +9,18 @@
   </div>
   <div *ngIf="isLoading" class="loading">Extracting information...</div>
   <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!isLoading" class="data-field">
+    <label>Detected Document Type (Footer Left)</label>
+    <div *ngIf="documentTypeMatch" class="kv-list">
+      <div class="kv-row"><strong>formFamily:</strong> <span>{{ documentTypeMatch.formFamily }}</span></div>
+      <div class="kv-row"><strong>formVersion:</strong> <span>{{ documentTypeMatch.formVersion }}</span></div>
+      <div class="kv-row"><strong>revision:</strong> <span>{{ documentTypeMatch.revision }}</span></div>
+      <div class="kv-row"><strong>page:</strong> <span>{{ documentTypeMatch.page }}</span></div>
+      <div class="kv-row"><strong>rawText:</strong> <span>{{ documentTypeMatch.rawText }}</span></div>
+    </div>
+    <span *ngIf="!documentTypeMatch">status: Not detected</span>
+  </div>
   
   <ng-container *ngFor="let regionArray of regions; let i = index">
     <div *ngIf="regionArray.length > 0" class="regions-section">

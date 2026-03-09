@@ -12,7 +12,8 @@ describe('PdfExtractComponent', () => {
 
   beforeEach(async () => {
     mockPdfExtractService = jasmine.createSpyObj('PdfExtractService', [
-      'extractKeywordRegions',
+      'extractKeywordRegionsBatch',
+      'extractDocumentTypeFromFooter',
       'extractTextFromKeywords',
     ]);
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
@@ -144,8 +145,12 @@ describe('PdfExtractComponent', () => {
       const mockFile = new File(['content'], 'test.pdf', { type: 'application/pdf' });
       component.pdfFile = mockFile;
 
-      mockPdfExtractService.extractKeywordRegions.and.returnValue(
+      mockPdfExtractService.extractKeywordRegionsBatch.and.returnValue(
         Promise.reject(new Error('Extraction failed'))
+      );
+
+      mockPdfExtractService.extractDocumentTypeFromFooter.and.returnValue(
+        Promise.resolve(null)
       );
 
       await (component as any).extractData();
@@ -158,8 +163,12 @@ describe('PdfExtractComponent', () => {
       const mockFile = new File(['content'], 'test.pdf', { type: 'application/pdf' });
       component.pdfFile = mockFile;
 
-      mockPdfExtractService.extractKeywordRegions.and.returnValue(
+      mockPdfExtractService.extractKeywordRegionsBatch.and.returnValue(
         Promise.reject('String error')
+      );
+
+      mockPdfExtractService.extractDocumentTypeFromFooter.and.returnValue(
+        Promise.resolve(null)
       );
 
       await (component as any).extractData();
@@ -174,7 +183,13 @@ describe('PdfExtractComponent', () => {
       const mockFile = new File(['content'], 'test.pdf', { type: 'application/pdf' });
       component.pdfFile = mockFile;
 
-      mockPdfExtractService.extractKeywordRegions.and.returnValue(Promise.resolve([]));
+      mockPdfExtractService.extractKeywordRegionsBatch.and.returnValue(
+        Promise.resolve([])
+      );
+
+      mockPdfExtractService.extractDocumentTypeFromFooter.and.returnValue(
+        Promise.resolve(null)
+      );
 
       await (component as any).extractData();
 

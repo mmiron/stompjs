@@ -153,6 +153,28 @@
   word-break: break-word;
 }
 
+.kv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kv-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  color: #e3f2fd;
+  background: #1a1a2e;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #42a5f5;
+}
+
+.kv-row strong {
+  color: #64b5f6;
+  min-width: 110px;
+}
+
 .regions-section {
   margin-top: 24px;
   display: flex;

@@ -1,7 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { PdfExtractService, FormSection } from './pdf-extract.service';
+import {
+  PdfExtractService,
+  FormSection,
+  FooterDocumentTypeMatch,
+} from './pdf-extract.service';
 
 interface KeywordRegion {
   page: number;
@@ -21,6 +25,7 @@ interface KeywordRegion {
 export class PdfExtractComponent implements OnInit {
   pdfFile: File | null = null;
   regions: KeywordRegion[][] = [];
+  documentTypeMatch: FooterDocumentTypeMatch | null = null;
   isLoading = false;
   error: string = '';
   readonly defaultPdfUrl = 'assets/pdf/pptc153.pdf';
@@ -74,13 +79,16 @@ export class PdfExtractComponent implements OnInit {
     this.isLoading = true;
     this.error = '';
     this.regions = [];
+    this.documentTypeMatch = null;
 
     try {
-      // Extract image regions for all form sections in a single PDF load
-      this.regions = await this.pdfExtract.extractKeywordRegionsBatch(
-        this.pdfFile,
-        this.formSections
-      );
+      const [regions, documentTypeMatch] = await Promise.all([
+        this.pdfExtract.extractKeywordRegionsBatch(this.pdfFile, this.formSections),
+        this.pdfExtract.extractDocumentTypeFromFooter(this.pdfFile),
+      ]);
+
+      this.regions = regions;
+      this.documentTypeMatch = documentTypeMatch;
     } catch (err) {
       this.error = this.getErrorMessage(err);
     } finally {

@@ -64,6 +64,33 @@ describe('PdfExtractService', () => {
     });
   });
 
+  describe('extractDocumentTypeFromFooter', () => {
+    it('should be defined', () => {
+      expect(service.extractDocumentTypeFromFooter).toBeDefined();
+      expect(typeof service.extractDocumentTypeFromFooter).toBe('function');
+    });
+
+    it('should accept one file parameter', () => {
+      expect(service.extractDocumentTypeFromFooter.length).toBe(1);
+    });
+  });
+
+  describe('document type parser', () => {
+    it('should parse PPTC footer format from text', () => {
+      const parsed = (service as any).parseDocumentTypeFromText('PPTC 153 (11-2024) sample');
+      expect(parsed).toEqual({
+        formFamily: 'PPTC',
+        formVersion: '153',
+        revision: '11-2024',
+      });
+    });
+
+    it('should return null for non-matching footer text', () => {
+      const parsed = (service as any).parseDocumentTypeFromText('Some unrelated footer');
+      expect(parsed).toBeNull();
+    });
+  });
+
   describe('service configuration', () => {
     it('should have proper injectable decorator', () => {
       expect(service).toBeTruthy();

@@ -28,7 +28,7 @@ describe('StompTopicSubscriptionManager', () => {
     const subscribeSpy = jasmine.createSpy('subscribe').and.returnValue(subscription);
     const client = createMockClient(subscribeSpy);
 
-    manager.requestEvents(['dataUpdate']);
+    manager.requestBindings([{ event: 'dataUpdate' }]);
     manager.syncSubscriptions(client, [
       createBinding('dataUpdate', '/topic/data'),
       createBinding('recordChanged', '/topic/recordChanged'),
@@ -53,7 +53,7 @@ describe('StompTopicSubscriptionManager', () => {
       .and.returnValues(firstSubscription, secondSubscription);
     const client = createMockClient(subscribeSpy);
 
-    manager.requestEvents(['dataUpdate']);
+    manager.requestBindings([{ event: 'dataUpdate' }]);
 
     manager.syncSubscriptions(client, [createBinding('dataUpdate', '/topic/data')]);
     manager.syncSubscriptions(client, [createBinding('dataUpdate', '/topic/data')]);
@@ -78,7 +78,10 @@ describe('StompTopicSubscriptionManager', () => {
       .and.returnValues(dataSubscription, recordSubscription);
     const client = createMockClient(subscribeSpy);
 
-    manager.requestEvents(['dataUpdate', 'recordChanged']);
+    manager.requestBindings([
+      { event: 'dataUpdate' },
+      { event: 'recordChanged' },
+    ]);
     manager.syncSubscriptions(client, [
       createBinding('dataUpdate', '/topic/data'),
       createBinding('recordChanged', '/topic/recordChanged'),

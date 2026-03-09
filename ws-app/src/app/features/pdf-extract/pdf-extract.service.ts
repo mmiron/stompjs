@@ -7,6 +7,14 @@ export interface FormSection {
   height?: number;
 }
 
+export interface FooterDocumentTypeMatch {
+  page: number;
+  formFamily: string;
+  formVersion: string;
+  revision: string;
+  rawText: string;
+}
+
 interface KeywordCoordinate {
   page: number;
   keyword: string;
@@ -20,10 +28,43 @@ interface KeywordRegion extends KeywordCoordinate {
 
 @Injectable({ providedIn: 'root' })
 export class PdfExtractService {
-  private readonly WORKER_SRC = '/assets/pdf-js/pdf.worker.min.mjs';
+  private readonly WORKER_SRC = '/assets/pdf.worker.min.mjs';
   private readonly RENDER_SCALE = 2;
   private readonly DEFAULT_WIDTH = 300;
   private readonly DEFAULT_HEIGHT = 100;
+  private readonly FOOTER_LEFT_X_RATIO = 0.5;
+  private readonly FOOTER_Y_RATIO = 0.18;
+  private readonly DOCUMENT_TYPE_PATTERN = /\b(PPTC)\s*(\d{3})\s*\((\d{2}-\d{4})\)/i;
+
+  async extractDocumentTypeFromFooter(
+    file: File
+  ): Promise<FooterDocumentTypeMatch | null> {
+    const arrayBuffer = await file.arrayBuffer();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = this.WORKER_SRC;
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1 });
+      const textContent = await page.getTextContent();
+      const footerText = this.buildFooterLeftText(
+        textContent.items as any[],
+        viewport.width,
+        viewport.height
+      );
+
+      const parsed = this.parseDocumentTypeFromText(footerText);
+      if (parsed) {
+        return {
+          page: pageNum,
+          ...parsed,
+          rawText: footerText,
+        };
+      }
+    }
+
+    return null;
+  }
 
   /**
    * Reads a PDF, searches for keywords, and returns their x,y coordinates on each page.
@@ -475,5 +516,59 @@ export class PdfExtractService {
 
   private normalizeKey(key: string): string {
     return key.toLowerCase().replace(/\s+/g, '');
+  }
+
+  private buildFooterLeftText(
+    items: any[],
+    pageWidth: number,
+    pageHeight: number
+  ): string {
+    const maxFooterY = pageHeight * this.FOOTER_Y_RATIO;
+    const maxLeftX = pageWidth * this.FOOTER_LEFT_X_RATIO;
+
+    const footerItems = items
+      .filter((item) => typeof item?.str === 'string' && item.str.trim())
+      .map((item) => {
+        const [, , , , x, y] = item.transform ?? [];
+        return {
+          text: String(item.str).trim(),
+          x: Number(x) || 0,
+          y: Number(y) || 0,
+        };
+      })
+      .filter((item) => item.x <= maxLeftX && item.y <= maxFooterY);
+
+    footerItems.sort((a, b) => {
+      const yDiff = b.y - a.y;
+      if (Math.abs(yDiff) > 1.5) {
+        return yDiff;
+      }
+      return a.x - b.x;
+    });
+
+    return footerItems
+      .map((item) => item.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private parseDocumentTypeFromText(
+    text: string
+  ): Omit<FooterDocumentTypeMatch, 'page' | 'rawText'> | null {
+    const match = text.match(this.DOCUMENT_TYPE_PATTERN);
+    if (!match) {
+      return null;
+    }
+
+    const formFamily = match[1].toUpperCase();
+    const formVersion = match[2];
+    const revision = match[3];
+
+    return {
+      formFamily,
+      formVersion,
+      revision,
+    };
   }
 }

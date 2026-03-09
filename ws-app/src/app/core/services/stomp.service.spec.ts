@@ -1,5 +1,5 @@
 /// <reference types="jasmine" />
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { StompService } from './stomp.service';
 import { IMessage } from '@stomp/stompjs';
 import { DataRecordPayload } from '../../shared/models/data.model';
@@ -52,6 +52,10 @@ describe('StompService', () => {
     it('should expose connectionState$ observable', () => {
       expect(service.connectionState$).toBeTruthy();
     });
+
+    it('should expose connectionEvents$ observable', () => {
+      expect(service.connectionEvents$).toBeTruthy();
+    });
   });
 
   describe('Public API Methods', () => {
@@ -67,8 +71,8 @@ describe('StompService', () => {
       expect(typeof service.updateRecord).toBe('function');
     });
 
-    it('should have requestData() method', () => {
-      expect(typeof service.requestData).toBe('function');
+    it('should have requestInitData() method', () => {
+      expect(typeof service.requestInitData).toBe('function');
     });
   });
 
@@ -241,25 +245,24 @@ describe('StompService', () => {
     });
   });
 
-  describe('RequestData Method', () => {
-    it('should handle default parameters (page=0, limit=8)', () => {
-      spyOn(console, 'log');
-      service.requestData();
-      expect(console.log).toHaveBeenCalledWith('Data is pushed from server every 5 seconds');
-    });
+  describe('RequestInitData Method', () => {
+    it('should publish init-data request when already connected', () => {
+      const publishSpy = jasmine.createSpy('publish');
+      const deactivateSpy = jasmine
+        .createSpy('deactivate')
+        .and.returnValue(Promise.resolve());
+      (service as any).stompClient = {
+        active: true,
+        connected: true,
+        publish: publishSpy,
+        deactivate: deactivateSpy,
+      };
 
-    it('should accept custom page and limit parameters', () => {
-      spyOn(console, 'log');
-      service.requestData(5, 20);
-      expect(console.log).toHaveBeenCalledWith('Data is pushed from server every 5 seconds');
-    });
+      service.requestInitData();
 
-    it('should not throw with various page/limit combinations', () => {
-      expect(() => {
-        service.requestData(0, 10);
-        service.requestData(10, 50);
-        service.requestData(100, 100);
-      }).not.toThrow();
+      expect(publishSpy).toHaveBeenCalledWith(
+        jasmine.objectContaining({ destination: '/app/initData' }),
+      );
     });
   });
 
@@ -497,5 +500,88 @@ describe('StompService', () => {
       expect(refreshSpy).not.toHaveBeenCalled();
       expect((service as any).runtimeProfileOverrides).toEqual({});
     });
+  });
+
+  describe('Connection Event Stream and Heartbeat Recovery', () => {
+    it('should emit manual disconnect connection event', () => {
+      const emitted: any[] = [];
+      const subscription = service.connectionEvents$.subscribe((event) => {
+        emitted.push(event);
+      });
+
+      const deactivateSpy = jasmine
+        .createSpy('deactivate')
+        .and.returnValue(Promise.resolve());
+      (service as any).stompClient = {
+        active: true,
+        deactivate: deactivateSpy,
+      };
+
+      service.disconnect();
+
+      expect(deactivateSpy).toHaveBeenCalled();
+      expect(emitted.length).toBeGreaterThan(0);
+      expect(emitted[emitted.length - 1]).toEqual(
+        jasmine.objectContaining({
+          state: 'disconnected',
+          reason: 'manual_disconnect',
+        }),
+      );
+
+      subscription.unsubscribe();
+    });
+
+    it('should trigger reconnect flow when heartbeat is lost', () => {
+      const restartSpy = spyOn<any>(service, 'restartActiveClient');
+      const emitted: any[] = [];
+      const subscription = service.connectionEvents$.subscribe((event) => {
+        emitted.push(event);
+      });
+
+      (service as any).stompClient = {
+        connected: true,
+        active: true,
+        deactivate: jasmine
+          .createSpy('deactivate')
+          .and.returnValue(Promise.resolve()),
+      };
+      (service as any).manualDisconnect = false;
+      (service as any).networkOffline = false;
+
+      (service as any).handleHeartbeatLost('stomp_callback');
+
+      expect(restartSpy).toHaveBeenCalled();
+      expect(emitted[emitted.length - 1]).toEqual(
+        jasmine.objectContaining({
+          state: 'reconnecting',
+          reason: 'heartbeat_lost',
+        }),
+      );
+
+      subscription.unsubscribe();
+    });
+
+    it('should invoke heartbeat recovery on watchdog timeout', fakeAsync(() => {
+      const heartbeatLostSpy = spyOn<any>(service, 'handleHeartbeatLost');
+
+      (service as any).networkConfig = {
+        ...(service as any).networkConfig,
+        stompHeartbeatMs: 20,
+      };
+      (service as any).manualDisconnect = false;
+      (service as any).networkOffline = false;
+      (service as any).stompClient = {
+        connected: true,
+        active: true,
+        deactivate: jasmine
+          .createSpy('deactivate')
+          .and.returnValue(Promise.resolve()),
+      };
+
+      (service as any).scheduleHeartbeatWatchdog();
+      tick(1100);
+
+      expect(heartbeatLostSpy).toHaveBeenCalledWith('watchdog_timeout');
+    }));
   });
 });

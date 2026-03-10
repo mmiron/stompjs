@@ -1,0 +1,44 @@
+
+.pdfa-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(66, 165, 245, 0.15);
+}
+
+.pdfa-section h3 {
+  color: #23234a;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.pdfa-section input[type="file"] {
+  margin-bottom: 12px;
+}
+
+.pdfa-section button {
+  padding: 8px 16px;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.pdfa-section .error {
+  color: #ff5252;
+  margin-bottom: 8px;
+}
+
+.pdfa-section textarea {
+  width: 100%;
+  background: #fff;
+  color: #23234a;
+  border-radius: 6px;
+  border: 1px solid #1976d2;
+  padding: 8px;
+  font-size: 14px;
+}

@@ -20,6 +20,11 @@ export const routes: Routes = [
 		resolve: { locale: localeResolve },
 	},
 	{
+		path: 'dynamsoft-pdfa',
+		loadComponent: () => import('./features/pdf-extract/dynamsoft-pdfa.component').then(m => m.DynamsoftPdfAComponent),
+		resolve: { locale: localeResolve },
+	},
+	{
 		path: 'qr-extract',
 		loadComponent: () => import('./features/qr-extract/qr-extract.component').then(m => m.QrExtractComponent),
 		resolve: { locale: localeResolve },

@@ -35,7 +35,11 @@ export class PdfExtractComponent implements OnInit {
     { keyword: 'EMERGENCY CONTACT INFORMATION (MANDATORY)', width: 1200, height: 266 },
   ];
 
-  constructor(private pdfExtract: PdfExtractService, private router: Router) {}
+
+  constructor(
+    private pdfExtract: PdfExtractService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadDefaultPdf();
@@ -70,6 +74,8 @@ export class PdfExtractComponent implements OnInit {
     this.pdfFile = files[0];
     await this.extractData();
   }
+
+
 
   private async extractData(): Promise<void> {
     if (!this.pdfFile) {

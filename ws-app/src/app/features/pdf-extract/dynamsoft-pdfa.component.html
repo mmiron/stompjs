@@ -1,0 +1,18 @@
+<div class="header">
+  <a class="back-button" routerLink="/home">← Back to Home</a>
+</div>
+<!-- Dynamsoft WebTWAIN Control Container -->
+<div id="dwtcontrolContainer" style="width:0;height:0;overflow:hidden;"></div>
+
+<div class="pdfa-section">
+  <h3>PDF/A-2 Image to PDF Demo</h3>
+  <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+  <input type="file" accept="application/pdf" (change)="onPdfSelected($event)" />
+  <button (click)="addPdfPagesReverse()" [disabled]!="pdfFile">Extract PDF Pages (Reverse) & Add to PDF/A-2</button>
+  <button (click)="exportPdfA2()" [disabled]!="imageFile && !pdfFile">Export PDF/A-2 as Base64</button>
+  <div *ngIf="pdfaError" class="error">{{ pdfaError }}</div>
+  <div *ngIf="pdfaBase64">
+    <label>PDF/A-2 Base64 Output:</label>
+    <textarea rows="6" cols="60" readonly>{{ pdfaBase64 }}</textarea>
+  </div>
+</div>
